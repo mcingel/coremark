@@ -111,9 +111,12 @@ volatile ee_s32 seed5_volatile = 0;
 #define EE_TIMER_TICKER_RATE 1000
 #define CORETIMETYPE         struct timespec
 #define GETMYTIME(_t)        clock_gettime(CLOCK_REALTIME, _t)
-#define MYTIMEDIFF(fin, ini)                                         \
-    ((fin.tv_sec - ini.tv_sec) * (NSECS_PER_SEC / TIMER_RES_DIVIDER) \
-     + (fin.tv_nsec - ini.tv_nsec) / TIMER_RES_DIVIDER)
+#define MYTIMEDIFF(fin, ini)                                                \
+    (fin.tv_nsec >= ini.tv_nsec ?                                           \
+        ((fin.tv_sec - ini.tv_sec) * (NSECS_PER_SEC / TIMER_RES_DIVIDER)    \
+        + (fin.tv_nsec - ini.tv_nsec) / TIMER_RES_DIVIDER) :                \
+        ((fin.tv_sec - ini.tv_sec - 1) * (NSECS_PER_SEC / TIMER_RES_DIVIDER)\
+        + (NSECS_PER_SEC + fin.tv_nsec - ini.tv_nsec) / TIMER_RES_DIVIDER))
 /* setting to 1/1000 of a second resolution by default with linux */
 #ifndef TIMER_RES_DIVIDER
 #define TIMER_RES_DIVIDER 1000000
@@ -218,7 +221,7 @@ portable_init(core_portable *p, int *argc, char *argv[])
 
     (void)argc; // prevent unused warning
     (void)argv; // prevent unused warning
-    
+
     if (sizeof(ee_ptr_int) != sizeof(ee_u8 *))
     {
         ee_printf(
